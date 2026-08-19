@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title description">
+  <title id="title">TIER LIST</title>
+  <desc id="description">Фирменный баннер приложения TIER LIST</desc>
+
+  <defs>
+    <linearGradient id="blueFade" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2F6EDB" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#2F6EDB" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M 80 0 L 0 0 0 80" fill="none" stroke="#FFFFFF" stroke-opacity="0.035" stroke-width="1"/>
+    </pattern>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="#000000"/>
+  <rect width="1600" height="900" fill="url(#grid)"/>
+  <circle cx="1260" cy="160" r="520" fill="url(#blueFade)"/>
+  <path d="M0 720H1600" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <path d="M110 720H500" stroke="#2F6EDB" stroke-width="4"/>
+
+  <g transform="translate(220 292)" filter="url(#shadow)">
+    <g fill="#2A2A2A">
+      <rect x="0" y="0" width="50" height="50" rx="8"/>
+      <rect x="62" y="0" width="50" height="50" rx="8"/>
+      <rect x="124" y="0" width="50" height="50" rx="8"/>
+      <rect x="186" y="0" width="50" height="50" rx="8"/>
+      <rect x="248" y="0" width="50" height="50" rx="8"/>
+      <rect x="62" y="62" width="50" height="50" rx="8"/>
+      <rect x="124" y="62" width="50" height="50" rx="8"/>
+      <rect x="186" y="62" width="50" height="50" rx="8"/>
+      <rect x="248" y="62" width="50" height="50" rx="8"/>
+      <rect x="124" y="124" width="50" height="50" rx="8"/>
+      <rect x="186" y="124" width="50" height="50" rx="8"/>
+      <rect x="248" y="124" width="50" height="50" rx="8"/>
+      <rect x="186" y="186" width="50" height="50" rx="8"/>
+      <rect x="248" y="186" width="50" height="50" rx="8"/>
+    </g>
+
+    <rect x="0" y="62" width="50" height="50" rx="8" fill="#FF6666"/>
+    <rect x="0" y="124" width="50" height="50" rx="8" fill="#FFB347"/>
+    <rect x="62" y="124" width="50" height="50" rx="8" fill="#FFB347"/>
+    <rect x="0" y="186" width="50" height="50" rx="8" fill="#FFE45C"/>
+    <rect x="62" y="186" width="50" height="50" rx="8" fill="#FFE45C"/>
+    <rect x="124" y="186" width="50" height="50" rx="8" fill="#FFE45C"/>
+    <rect x="0" y="248" width="50" height="50" rx="8" fill="#74DD72"/>
+    <rect x="62" y="248" width="50" height="50" rx="8" fill="#74DD72"/>
+    <rect x="124" y="248" width="50" height="50" rx="8" fill="#74DD72"/>
+    <rect x="186" y="248" width="50" height="50" rx="8" fill="#74DD72"/>
+    <rect x="0" y="310" width="50" height="50" rx="8" fill="#36B9F4"/>
+    <rect x="62" y="310" width="50" height="50" rx="8" fill="#36B9F4"/>
+    <rect x="124" y="310" width="50" height="50" rx="8" fill="#36B9F4"/>
+    <rect x="186" y="310" width="50" height="50" rx="8" fill="#36B9F4"/>
+    <rect x="248" y="310" width="50" height="50" rx="8" fill="#2F6EDB"/>
+  </g>
+
+  <g transform="translate(620 350)">
+    <text x="0" y="0" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="112" font-weight="900" letter-spacing="18">TIER LIST</text>
+    <rect x="4" y="54" width="130" height="5" rx="2.5" fill="#2F6EDB"/>
+    <text x="4" y="112" fill="#FFFFFF" fill-opacity="0.46" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" letter-spacing="7">СОБЕРИ СВОЙ РЕЙТИНГ</text>
+  </g>
+
+  <g transform="translate(112 780)">
+    <text fill="#FFFFFF" fill-opacity="0.28" font-family="Consolas, monospace" font-size="18" letter-spacing="4">GAMES · RANKS · YOUR RULES</text>
+  </g>
+</svg>
