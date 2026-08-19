@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./docs/tier-list-banner.png" alt="TIER LIST — баннер проекта" width="100%" />
+</p>
+
 # TIER LIST
 
 Стильное веб-приложение для создания и сохранения игровых тир-листов. Игры загружаются из [RAWG Video Games Database](https://rawg.io/apidocs), а пользовательские данные хранятся локально в браузере.
