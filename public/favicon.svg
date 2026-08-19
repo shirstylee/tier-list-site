@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">
+  <rect width="72" height="72" rx="14" fill="#000"/>
+  <g>
+    <rect x="7" y="7" width="10" height="10" rx="3" fill="#ff4149"/><rect x="19" y="7" width="10" height="10" rx="3" fill="#303034"/><rect x="31" y="7" width="10" height="10" rx="3" fill="#303034"/><rect x="43" y="7" width="10" height="10" rx="3" fill="#303034"/><rect x="55" y="7" width="10" height="10" rx="3" fill="#303034"/>
+    <rect x="7" y="19" width="10" height="10" rx="3" fill="#ff8818"/><rect x="19" y="19" width="10" height="10" rx="3" fill="#ff8818"/><rect x="31" y="19" width="10" height="10" rx="3" fill="#303034"/><rect x="43" y="19" width="10" height="10" rx="3" fill="#303034"/><rect x="55" y="19" width="10" height="10" rx="3" fill="#303034"/>
+    <rect x="7" y="31" width="10" height="10" rx="3" fill="#ffd126"/><rect x="19" y="31" width="10" height="10" rx="3" fill="#ffd126"/><rect x="31" y="31" width="10" height="10" rx="3" fill="#ffd126"/><rect x="43" y="31" width="10" height="10" rx="3" fill="#303034"/><rect x="55" y="31" width="10" height="10" rx="3" fill="#303034"/>
+    <rect x="7" y="43" width="10" height="10" rx="3" fill="#49d84f"/><rect x="19" y="43" width="10" height="10" rx="3" fill="#49d84f"/><rect x="31" y="43" width="10" height="10" rx="3" fill="#49d84f"/><rect x="43" y="43" width="10" height="10" rx="3" fill="#49d84f"/><rect x="55" y="43" width="10" height="10" rx="3" fill="#303034"/>
+    <rect x="7" y="55" width="10" height="10" rx="3" fill="#2f8df0"/><rect x="19" y="55" width="10" height="10" rx="3" fill="#2f8df0"/><rect x="31" y="55" width="10" height="10" rx="3" fill="#2f8df0"/><rect x="43" y="55" width="10" height="10" rx="3" fill="#2f8df0"/><rect x="55" y="55" width="10" height="10" rx="3" fill="#2f8df0"/>
+  </g>
+</svg>
