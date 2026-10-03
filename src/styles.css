@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+.storage-warning {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 14px 20px;
+  border: 1px solid #2f6edb;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 14px;
+}
+
 @theme {
   --color-blue: #2f6edb;
   --color-ink: #000000;

@@ -1,9 +1,7 @@
 import { DEMO_GAMES } from "../data";
 
-export const hasRawgKey = Boolean(import.meta.env.VITE_RAWG_API_KEY);
-
-const RAWG_API_ROOT = "https://api.rawg.io/api";
-const RAWG_REQUEST_TIMEOUT = 6000;
+const RAWG_API_ROOT = "/api/rawg";
+const RAWG_REQUEST_TIMEOUT = 15000;
 
 export const GAME_GENRES = [
   { value: "", label: "Все жанры" },
@@ -33,15 +31,16 @@ let rawgBackoffUntil = 0;
 
 function waitWithSignal(delay, signal) {
   return new Promise((resolve, reject) => {
-    const timer = window.setTimeout(resolve, delay);
-    signal?.addEventListener(
-      "abort",
-      () => {
-        window.clearTimeout(timer);
-        reject(new DOMException("Search cancelled", "AbortError"));
-      },
-      { once: true },
-    );
+    if (signal?.aborted) { reject(new DOMException("Search cancelled", "AbortError")); return; }
+    const abort = () => {
+      window.clearTimeout(timer);
+      reject(new DOMException("Search cancelled", "AbortError"));
+    };
+    const timer = window.setTimeout(() => {
+      signal?.removeEventListener("abort", abort);
+      resolve();
+    }, delay);
+    signal?.addEventListener("abort", abort, { once: true });
   });
 }
 
@@ -98,30 +97,26 @@ async function requestRawg(path, signal) {
   else signal?.addEventListener("abort", abortFromCaller, { once: true });
 
   try {
-    const separator = path.includes("?") ? "&" : "?";
     const response = await fetch(
-      `${RAWG_API_ROOT}${path}${separator}key=${encodeURIComponent(import.meta.env.VITE_RAWG_API_KEY.trim())}`,
+      `${RAWG_API_ROOT}${path}`,
       { signal: controller.signal },
     );
 
-    if (response.status === 401 || response.status === 403) {
-      throw new Error("RAWG отклонил API-ключ. Проверьте VITE_RAWG_API_KEY в файле .env.");
-    }
-    if (response.status === 429) {
-      throw new Error("RAWG сообщает о превышении лимита запросов. Попробуйте немного позже.");
-    }
     if (!response.ok) {
-      throw new Error(`RAWG временно недоступен (ошибка ${response.status}).`);
+      const payload = await response.json().catch(() => ({}));
+      const error = new Error(payload.error || "Каталог временно недоступен. Попробуйте позже.");
+      error.code = payload.code;
+      throw error;
     }
 
     return response.json();
   } catch (error) {
     if (signal?.aborted) throw new DOMException("Request cancelled", "AbortError");
-    if (error.message?.startsWith("RAWG")) throw error;
+    if (error.code) throw error;
     if (timedOut) {
       throw new Error("RAWG не ответил вовремя. Проверьте подключение или попробуйте позже.");
     }
-    throw new Error("Не удалось подключиться к RAWG. Проверьте интернет, VPN или блокировку api.rawg.io.");
+    throw new Error("Не удалось загрузить каталог. Проверьте интернет или попробуйте позже.");
   } finally {
     window.clearTimeout(timeout);
     signal?.removeEventListener("abort", abortFromCaller);
@@ -149,11 +144,12 @@ function filterDemoGames(games, query, filters) {
     .sort((first, second) => (second.rating ?? 0) - (first.rating ?? 0));
 }
 
-function createLocalSearchResult(query, filters, page) {
+function createLocalSearchResult(query, filters, page, notice = "Доступен демонстрационный каталог.") {
   return {
     games: page === 1 ? filterDemoGames(DEMO_GAMES, query, filters) : [],
     hasMore: false,
     offline: true,
+    notice,
   };
 }
 
@@ -166,20 +162,14 @@ export async function searchGames(query, signal, options = {}) {
   };
   const page = Math.max(1, Number(options.page) || 1);
   const cleanQuery = query.trim();
-  const cacheKey = JSON.stringify({ cleanQuery, filters, page, hasRawgKey });
+  const cacheKey = JSON.stringify({ cleanQuery, filters, page });
   const cached = searchCache.get(cacheKey);
   if (cached && Date.now() - cached.createdAt < SEARCH_CACHE_TTL) {
     return cached.value;
   }
 
-  if (!hasRawgKey) {
-    await waitWithSignal(120, signal);
-    const value = createLocalSearchResult(cleanQuery, filters, page);
-    searchCache.set(cacheKey, { createdAt: Date.now(), value });
-    return value;
-  }
-
   if (Date.now() < rawgBackoffUntil) {
+    await waitWithSignal(80, signal);
     return createLocalSearchResult(cleanQuery, filters, page);
   }
 
@@ -198,14 +188,14 @@ export async function searchGames(query, signal, options = {}) {
     payload = await requestRawg(`/games?${params}`, signal);
   } catch (error) {
     if (error.name === "AbortError") throw error;
-    if (error.message.includes("API-ключ")) throw error;
-    rawgBackoffUntil = Date.now() + 60 * 1000;
-    return createLocalSearchResult(cleanQuery, filters, page);
+    rawgBackoffUntil = Date.now() + 15 * 1000;
+    return createLocalSearchResult(cleanQuery, filters, page, `${error.message} Показаны игры из демо-каталога.`);
   }
   const games = payload.results
     .map(normalizeGame)
     .filter((game) => !filters.minRating || (game.rating ?? 0) >= Number(filters.minRating));
   const value = { games, hasMore: Boolean(payload.next) };
+  if (searchCache.size >= 100) searchCache.delete(searchCache.keys().next().value);
   searchCache.set(cacheKey, { createdAt: Date.now(), value });
   return value;
 }
@@ -213,7 +203,6 @@ export async function searchGames(query, signal, options = {}) {
 export async function getGameDetails(game, signal) {
   const key = String(game.id);
   if (detailsCache.has(key)) return detailsCache.get(key);
-  if (!hasRawgKey) return game;
 
   let rawgIdentifier = String(game.id);
   if (rawgIdentifier.startsWith("demo-")) {
@@ -233,9 +222,11 @@ export async function getGameDetails(game, signal) {
     throw new Error("RAWG не смог найти эту игру по названию.");
   }
 
-  const details = normalizeGame(
-    await requestRawg(`/games/${encodeURIComponent(rawgIdentifier)}`, signal),
-  );
+  let payload;
+  try { payload = await requestRawg(`/games/${encodeURIComponent(rawgIdentifier)}`, signal); }
+  catch (error) { if (error.code === "API_NOT_CONFIGURED") return game; throw error; }
+  const details = normalizeGame(payload);
+  if (detailsCache.size >= 100) detailsCache.delete(detailsCache.keys().next().value);
   detailsCache.set(key, details);
   return details;
 }

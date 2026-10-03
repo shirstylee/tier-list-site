@@ -8,6 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import GameArt from "./GameArt";
 import Modal from "./Modal";
+import { isSafeUrl } from "../lib/dataValidation";
 
 export default function GameDetailsModal({ game, open, onClose, loading, error, onRetry }) {
   return (
@@ -59,7 +60,7 @@ export default function GameDetailsModal({ game, open, onClose, loading, error, 
               </dl>
             )}
             {!error && <p>{game.description || "В RAWG пока нет подробного описания этой игры."}</p>}
-            {!error && game.sourceUrl && (
+            {!error && isSafeUrl(game.sourceUrl) && (
               <a className="game-details-source" href={game.sourceUrl} target="_blank" rel="noreferrer">
                 Данные предоставлены RAWG
                 <ArrowSquareOut size={14} weight="bold" />

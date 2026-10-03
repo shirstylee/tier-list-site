@@ -11,33 +11,7 @@ import {
   TIER_COLORS,
 } from "./data";
 import { useLocalStorage } from "./hooks/useLocalStorage";
-
-function isValidCategory(category) {
-  return (
-    category &&
-    typeof category.id === "string" &&
-    typeof category.label === "string" &&
-    typeof category.enabled === "boolean"
-  );
-}
-
-function isValidList(list) {
-  return (
-    list &&
-    typeof list.id === "string" &&
-    typeof list.title === "string" &&
-    Array.isArray(list.tiers) &&
-    list.tiers.every(
-      (tier) =>
-        tier &&
-        typeof tier.id === "string" &&
-        typeof tier.label === "string" &&
-        typeof tier.color === "string" &&
-        Array.isArray(tier.games),
-    ) &&
-    Array.isArray(list.unranked)
-  );
-}
+import { isValidBackup } from "./lib/dataValidation";
 
 const LEGACY_TIER_COLORS = new Set([
   "#2f6edb",
@@ -71,21 +45,23 @@ function applyTierPalette(lists) {
 }
 
 export default function App() {
-  const [categories, setCategories] = useLocalStorage(
+  const [categories, setCategories, categoriesError] = useLocalStorage(
     "rankd-categories",
     DEFAULT_CATEGORIES,
   );
-  const [lists, setLists] = useLocalStorage("rankd-lists", []);
-  const [profile, setProfile] = useLocalStorage(
+  const [lists, setLists, listsError] = useLocalStorage("rankd-lists", []);
+  const [profile, setProfile, profileError] = useLocalStorage(
     "rankd-profile",
     DEFAULT_PROFILE,
   );
   const [activeCategory, setActiveCategory] = useState(categories[0]);
   const [view, setView] = useState("home");
   const [editingList, setEditingList] = useState(null);
+  const [editorKey, setEditorKey] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
+  const storageError = listsError || profileError || categoriesError;
 
   useEffect(() => {
     setLists((current) => applyTierPalette(current));
@@ -109,6 +85,7 @@ export default function App() {
   const openEditor = (list = null) => {
     setActiveCategory(categories.find((category) => category.id === "games"));
     setEditingList(list);
+    setEditorKey(list?.id ?? crypto.randomUUID());
     setView("editor");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -204,21 +181,7 @@ export default function App() {
   };
 
   const importData = (payload) => {
-    const validProfile =
-      payload?.profile &&
-      typeof payload.profile.nickname === "string" &&
-      (payload.profile.avatar === null ||
-        (typeof payload.profile.avatar === "string" &&
-          payload.profile.avatar.startsWith("data:image/")));
-
-    if (
-      payload?.version !== 1 ||
-      !validProfile ||
-      !Array.isArray(payload.categories) ||
-      !payload.categories.every(isValidCategory) ||
-      !Array.isArray(payload.lists) ||
-      !payload.lists.every(isValidList)
-    ) {
+    if (!isValidBackup(payload)) {
       return {
         ok: false,
         message: "Файл не похож на резервную копию Tier List.",
@@ -262,6 +225,8 @@ export default function App() {
         onHome={goHome}
       />
 
+      {storageError && <p className="storage-warning" role="alert">{storageError}</p>}
+
       {view === "home" && (
         <>
           <SavedLists
@@ -271,18 +236,15 @@ export default function App() {
             onDelete={deleteList}
             onDuplicate={duplicateList}
           />
-          <footer className="footer">
-            <span>Tier List / 2026</span>
-            <span>Твой вкус. Твои правила.</span>
-          </footer>
         </>
       )}
 
       {view === "editor" && (
         <TierEditor
-          key={editingList?.id ?? "new"}
+          key={editorKey}
           initialList={editingList}
           onSave={saveList}
+          storageError={listsError}
         />
       )}
 
@@ -308,6 +270,11 @@ export default function App() {
         onClose={() => setCategoryModalOpen(false)}
         onCreate={createCategory}
       />
+      <footer className="footer">
+        <span>TIER LIST / {new Date().getFullYear()}</span>
+        <a href="https://rawg.io/" target="_blank" rel="noopener noreferrer">Данные об играх и изображения — RAWG</a>
+        <span>Тир-листы хранятся в этом браузере.</span>
+      </footer>
     </div>
   );
 }

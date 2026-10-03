@@ -7,7 +7,7 @@ function roundedRect(context, x, y, width, height, radius) {
 async function loadImage(url) {
   if (!url) return null;
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
     if (!response.ok) return null;
     const blob = await response.blob();
     return await createImageBitmap(blob);
@@ -62,10 +62,13 @@ export async function exportTierListPng(list) {
     Math.max(146, Math.ceil(Math.max(1, tier.games.length) / columns) * (cardHeight + gap) + 24),
   );
   const height = 190 + rowHeights.reduce((sum, value) => sum + value + 12, 0) + 72;
+  if (height > 16_000) throw new Error("Тир-лист слишком большой для одного PNG. Разделите его на несколько списков.");
+  await document.fonts.ready;
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const context = canvas.getContext("2d");
+  if (!context) throw new Error("Браузер не поддерживает создание изображения.");
 
   context.fillStyle = "#050505";
   context.fillRect(0, 0, width, height);
@@ -121,6 +124,9 @@ export async function exportTierListPng(list) {
   context.font = "500 15px Inter, sans-serif";
   context.textAlign = "right";
   context.fillText("Создано в TIER LIST", width - padding, height - 34);
+  for (const image of images.values()) image?.close?.();
+  context.textAlign = "left";
+  context.fillText("Данные об играх: RAWG • rawg.io", padding, height - 34);
 
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png", 0.94));
   if (!blob) throw new Error("Не удалось создать изображение.");
@@ -129,5 +135,5 @@ export async function exportTierListPng(list) {
   link.href = url;
   link.download = `tierlist-${new Date().toISOString().slice(0, 10)}.png`;
   link.click();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

@@ -28,7 +28,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { DEFAULT_TIERS, DEMO_GAMES, TIER_COLORS } from "../data";
+import { DEFAULT_TIERS, TIER_COLORS } from "../data";
 import { useHistoryState } from "../hooks/useHistoryState";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { exportTierListPng } from "../lib/exportTierList";
@@ -36,7 +36,6 @@ import {
   GAME_GENRES,
   GAME_PLATFORMS,
   getGameDetails,
-  hasRawgKey,
   searchGames,
 } from "../lib/rawg";
 import GameDetailsModal from "./GameDetailsModal";
@@ -275,7 +274,7 @@ function LoadingGames() {
   );
 }
 
-export default function TierEditor({ initialList, onSave }) {
+export default function TierEditor({ initialList, onSave, storageError = "" }) {
   const {
     value: draft,
     setValue: setDraft,
@@ -285,12 +284,13 @@ export default function TierEditor({ initialList, onSave }) {
     canRedo,
   } = useHistoryState(() => makeDraft(initialList));
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState(DEMO_GAMES);
-  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
+  const [catalogNotice, setCatalogNotice] = useState("");
   const [filters, setFilters] = useState({
     year: "",
     genre: "",
@@ -340,6 +340,9 @@ export default function TierEditor({ initialList, onSave }) {
   const autoSaveTimer = useRef(null);
   const skipFirstAutoSave = useRef(true);
   const onSaveRef = useRef(onSave);
+  const latestDraftRef = useRef(draft);
+  const persistedDraftRef = useRef(draft);
+  latestDraftRef.current = draft;
   const searchResultsRef = useRef(null);
   const loadMoreRef = useRef(null);
   const autoScrollFrame = useRef(null);
@@ -407,6 +410,7 @@ export default function TierEditor({ initialList, onSave }) {
             return [...new Map(merged.map((game) => [String(game.id), game])).values()];
           });
           setHasMore(response.hasMore);
+          setCatalogNotice(response.offline ? response.notice || "Доступен демонстрационный каталог." : "");
           if (query.trim().length > 1 && response.games.length) {
             setRecentSearches((current) => [
               query.trim(),
@@ -454,11 +458,29 @@ export default function TierEditor({ initialList, onSave }) {
     autoSaveTimer.current = window.setTimeout(() => {
       const updatedAt = new Date().toISOString();
       onSaveRef.current({ ...draft, updatedAt }, { silent: true });
+      persistedDraftRef.current = draft;
       setLastSavedAt(updatedAt);
       setSaveState("saved");
     }, 900);
     return () => window.clearTimeout(autoSaveTimer.current);
   }, [draft]);
+
+  useEffect(() => {
+    const flush = () => {
+      if (latestDraftRef.current === persistedDraftRef.current) return;
+      const latest = latestDraftRef.current;
+      onSaveRef.current({ ...latest, updatedAt: new Date().toISOString() }, { silent: true });
+      persistedDraftRef.current = latest;
+    };
+    const onVisibility = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVisibility);
+      flush();
+    };
+  }, []);
 
   useEffect(
     () => () => {
@@ -836,6 +858,7 @@ export default function TierEditor({ initialList, onSave }) {
     skipFirstAutoSave.current = true;
     setDraft(next, { record: false });
     onSaveRef.current(next);
+    persistedDraftRef.current = next;
     setLastSavedAt(next.updatedAt);
     setSaveState("saved");
     setSaved(true);
@@ -847,6 +870,8 @@ export default function TierEditor({ initialList, onSave }) {
     setExporting(true);
     try {
       await exportTierListPng(draft);
+    } catch (exportError) {
+      setError(exportError.message || "Не удалось создать PNG. Попробуйте ещё раз.");
     } finally {
       setExporting(false);
     }
@@ -1425,7 +1450,8 @@ export default function TierEditor({ initialList, onSave }) {
         </div>
         <span className={`autosave-status autosave-status-${saveState}`}>
           <span className="status-pulse" />
-          {saveState === "saving"
+          {storageError ? "Не сохранено на устройстве — экспортируйте данные"
+            : saveState === "saving"
             ? "Сохранение…"
             : lastSavedAt
               ? `Сохранено в ${savedTimeLabel}`
@@ -1877,12 +1903,11 @@ export default function TierEditor({ initialList, onSave }) {
                 </div>
               )}
 
-              {!hasRawgKey && (
+              {catalogNotice && (
                 <div className="api-notice">
                   <span className="status-pulse" />
                   <p>
-                    Демо-каталог. Добавь <code>VITE_RAWG_API_KEY</code> в{" "}
-                    <code>.env</code>, чтобы включить RAWG.
+                    {catalogNotice}
                   </p>
                 </div>
               )}

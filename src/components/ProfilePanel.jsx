@@ -91,7 +91,7 @@ export default function ProfilePanel({
     event.target.value = "";
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
+    if (!["image/png", "image/jpeg", "image/webp", "image/gif"].includes(file.type)) {
       setAvatarError("Выбери изображение в формате JPG, PNG или WebP.");
       return;
     }
@@ -114,6 +114,11 @@ export default function ProfilePanel({
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setTransferMessage("Размер резервной копии должен быть не больше 10 МБ.");
+      return;
+    }
+    if (!window.confirm("Импорт заменит профиль и все тир-листы на данные из файла. Продолжить?")) return;
 
     try {
       const payload = JSON.parse(await file.text());
